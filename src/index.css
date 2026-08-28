@@ -1,0 +1,172 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Nunito+Sans:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: #F26A21;
+  --color-brand-deep: #D94E0D;
+  --color-tangerine: #FF9A3D;
+  --color-peach: #FFE3CC;
+  --color-cream: #FFF9F4;
+  --color-ink: #263238;
+  --color-slate: #5E6B70;
+  --color-divider: #CDD4D6;
+  --color-teal: #168B82;
+  --color-teal-wash: #D8F4EE;
+  --color-amber: #F6BD31;
+  --color-amber-wash: #FFF3C9;
+  --color-route-blue: #2774C7;
+  --color-danger: #D9534F;
+  --color-danger-wash: #FCE3E0;
+  --color-navy: #18384A;
+  --font-display: 'Nunito', system-ui, sans-serif;
+  --font-body: 'Nunito Sans', system-ui, sans-serif;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  background-color: #E2DBD3;
+  color: #263238;
+  -webkit-font-smoothing: antialiased;
+}
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  background: #CDD4D6;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #F26A21;
+  border: 3px solid white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #F26A21;
+  border: 3px solid white;
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── Section reveal: always visible by default (JS-safe, no-motion-safe) ── */
+.section-reveal {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Nav scrolled state (shadow enhancement, not motion) ─────────────────── */
+nav.nav-scrolled {
+  box-shadow: 0 2px 20px rgba(0,0,0,0.10);
+  transition: box-shadow 300ms ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Hero entrance keyframe */
+  @keyframes hero-enter {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Map badge float keyframe */
+  @keyframes badge-float {
+    from { transform: translateY(-4px); }
+    to   { transform: translateY(4px); }
+  }
+
+  /* Apply to hero text elements with per-element animation-delay via inline style */
+  .hero-animate {
+    animation: hero-enter 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Floating badge */
+  .badge-float {
+    animation: badge-float 3s ease-in-out infinite alternate;
+  }
+
+  /* Scroll-driven section reveal */
+  .section-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 400ms cubic-bezier(0.16, 1, 0.3, 1),
+      transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .section-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── BigCTA word-by-word stagger ──────────────────────────────────────── */
+  .section-reveal .word-reveal {
+    display: block;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  .section-reveal.is-visible .word-reveal {
+    animation: hero-enter 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* ── Button spring release ────────────────────────────────────────────── */
+  @keyframes btn-spring {
+    0%   { transform: scale(0.97); }
+    60%  { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+  .btn-spring.was-active:not(:active) {
+    animation: btn-spring 200ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* ── Scroll progress bar (scroll-driven, @supports guarded) ──────────── */
+  @supports (animation-timeline: scroll()) {
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      width: 100%;
+      background: #F26A21;
+      transform-origin: left;
+      animation: scroll-progress linear both;
+      animation-timeline: scroll();
+      z-index: 100;
+      transform: scaleX(0);
+      pointer-events: none;
+    }
+    @keyframes scroll-progress {
+      from { transform: scaleX(0); }
+      to   { transform: scaleX(1); }
+    }
+  }
+}

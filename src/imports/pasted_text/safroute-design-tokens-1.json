@@ -1,0 +1,746 @@
+<figma_make_prompt>
+  <project>
+    <name>SafeRoute+ Bergen</name>
+    <tagline>Safer walking routes for children, older adults, and everyday pedestrians.</tagline>
+    <platform>Responsive web app, mobile-first</platform>
+    <prototype_goal>
+      Create a polished, realistic, competition-ready interactive prototype for a Congressional App Challenge entry.
+      The product helps users choose walking routes based on pedestrian-friendly street characteristics,
+      not travel time alone. It is a Ridgewood pilot under the SafeRoute+ Bergen brand.
+    </prototype_goal>
+    <primary_users>
+      <user>Children and teenagers walking independently</user>
+      <user>Older adults who benefit from lower-stress pedestrian routes</user>
+      <user>General pedestrians</user>
+      <user>Parents and guardians who want lightweight check-ins without surveillance</user>
+    </primary_users>
+    <core_positioning>
+      Do not claim to predict crashes, guarantee safety, calculate a probability of injury,
+      use crime prediction, or use artificial intelligence as marketing language.
+      Use transparent language: “pedestrian suitability,” “route characteristics,”
+      “street-level factors,” and “informed walking decisions.”
+    </core_positioning>
+  </project>
+
+  <design_direction>
+    <inspiration>
+      Use the playful confidence, rounded geometry, flat sticker-like interaction patterns,
+      friendly editorial spacing, and approachable clarity of Duolingo’s design language.
+      Do NOT copy Duolingo branding, mascot, logo, illustrations, exact visual layouts,
+      or green-first identity. SafeRoute+ must feel original, civic-minded, locally grounded,
+      and more trustworthy than gamified.
+    </inspiration>
+
+    <visual_personality>
+      Warm, optimistic, precise, youthful, neighborhood-centered, accessible, practical,
+      safety-conscious, not childish, not corporate, not futuristic.
+    </visual_personality>
+
+    <avoid_ai_slop>
+      Avoid glassmorphism, gradients, neon, floating transparent blobs, excessive shadows,
+      generic “AI sparkle” icons, lorem ipsum, stock-photo people, generic analytics dashboards,
+      overly rounded card grids, purple-blue SaaS styling, fake charts, vague safety claims,
+      huge hero text that overwhelms usability, and unnecessary features.
+      Use meaningful map interactions, visible route tradeoffs, believable local places,
+      concise real interface copy, and strong information hierarchy.
+    </avoid_ai_slop>
+
+    <colors>
+      <token name="route-orange" value="#F26A21" role="Primary brand color, main CTA, selected controls, route identity"/>
+      <token name="deep-orange" value="#D94E0D" role="Pressed states, strong emphasis"/>
+      <token name="tangerine" value="#FF9A3D" role="Warm secondary highlights and map callouts"/>
+      <token name="soft-peach" value="#FFE3CC" role="Selected backgrounds and supportive surfaces"/>
+      <token name="cream" value="#FFF9F4" role="Warm page background"/>
+      <token name="paper-white" value="#FFFFFF" role="Cards, map overlay panels, modal surfaces"/>
+      <token name="ink" value="#263238" role="Primary text"/>
+      <token name="slate" value="#5E6B70" role="Secondary text"/>
+      <token name="border" value="#CDD4D6" role="Neutral outlines"/>
+      <token name="safe-teal" value="#168B82" role="High pedestrian suitability and positive feedback"/>
+      <token name="teal-wash" value="#D8F4EE" role="Positive score surfaces"/>
+      <token name="attention-yellow" value="#F6BD31" role="Warnings and sunset information"/>
+      <token name="warning-wash" value="#FFF3C9" role="Warning surfaces"/>
+      <token name="route-blue" value="#2774C7" role="Fastest-route alternate and informational actions"/>
+      <token name="low-score-red" value="#D9534F" role="Lower suitability and difficult route factors"/>
+      <token name="low-score-wash" value="#FCE3E0" role="Lower-score surface"/>
+      <token name="navy" value="#18384A" role="Dark map labels, key navigation, footer"/>
+    </colors>
+
+    <typography>
+      <display>
+        Use Nunito Black or a similarly rounded, friendly display font.
+        Use only for major headlines at 40–52px desktop and 32–38px mobile.
+        Letter spacing: -0.02em.
+      </display>
+      <body>
+        Use Inter, Nunito Sans, or a clean geometric sans-serif.
+        Body: 15–17px, medium weight, comfortable line-height.
+        Labels and controls: 13–15px, 700 weight where emphasis is needed.
+      </body>
+      <rules>
+        Use sentence case for interface labels. Use uppercase sparingly, only for tiny map or navigation labels.
+        Keep copy concise, human, and specific. Do not use buzzwords such as “revolutionary,” “AI-powered,”
+        “next generation,” or “smart safety intelligence.”
+      </rules>
+    </typography>
+
+    <shape_and_elevation>
+      <corner_radius>12px for buttons, inputs, panels, chips, and cards</corner_radius>
+      <borders>Use crisp 2px outlines where interaction needs clarity. Use #CDD4D6 neutral borders by default.</borders>
+      <shadows>Very subtle or none. Favor borders and flat fills over shadows.</shadows>
+      <buttons>Chunky, tactile, sticker-like, accessible, clearly pressed when selected.</buttons>
+      <spacing>Use a 4px base unit with generous whitespace. Prefer 12, 16, 24, 32, 40, 48, 64, 80px increments.</spacing>
+    </shape_and_elevation>
+
+    <accessibility>
+      Maintain strong contrast. Never rely on color alone to distinguish routes.
+      Pair route colors with labels, patterns, icons, and score text.
+      Touch targets must be at least 44px tall.
+      Include visible focus states.
+      Make Guardian Mode language reassuring and non-alarmist.
+    </accessibility>
+  </design_direction>
+
+  <logo>
+    <instruction>
+      Use the provided SafeRoute+ Bergen logo image as the logo asset.
+      Place it in the top-left of desktop navigation and onboarding screens.
+      Preserve its recognizable walking-person, crosswalk, plus-sign, and orange/black character.
+      Do not redraw or replace it with generic iconography.
+    </instruction>
+  </logo>
+
+  <design_system>
+    <components>
+      <component name="PrimaryButton">
+        <style>route-orange fill, white text, 2px deep-orange lower border or subtle pressed offset, 12px radius, 48px height</style>
+        <states>default, hover, pressed, disabled, loading</states>
+      </component>
+
+      <component name="SecondaryButton">
+        <style>paper-white fill, 2px border, ink or route-blue text, 12px radius, 48px height</style>
+        <states>default, hover, pressed, disabled</states>
+      </component>
+
+      <component name="ProfileChip">
+        <style>outlined selectable chip with an icon, label, and visible selected state using soft-peach fill and route-orange border</style>
+        <examples>Child / teen; Older adult; General pedestrian</examples>
+      </component>
+
+      <component name="RouteOptionCard">
+        <style>
+          White card, 2px neutral border. Selected card has 3px route-orange outline and soft-peach surface.
+          Include route color swatch, route name, duration, distance, suitability score, and one-line tradeoff.
+        </style>
+      </component>
+
+      <component name="SuitabilityBadge">
+        <style>Rounded compact badge with score number and status label. Use teal, yellow, or red visual treatment based on score.</style>
+        <labels>Great for walking; Mixed conditions; Use extra care</labels>
+      </component>
+
+      <component name="FactorChip">
+        <style>Small outlined pill with a simple icon, short label, and positive or caution color accent.</style>
+        <examples>Sidewalk present; Residential street; Signal nearby; Higher speed; Long crossing; Major intersection</examples>
+      </component>
+
+      <component name="BottomSheet">
+        <style>
+          Mobile white sheet attached to bottom with a 24px top radius, clear drag handle,
+          no glass effect, and a visible close action.
+        </style>
+      </component>
+
+      <component name="MapPin">
+        <style>Simple orange origin pin and navy destination pin. Use an accessible icon and label.</style>
+      </component>
+
+      <component name="GuardianAction">
+        <style>Full-width tactile action row with icon, label, supporting text, and 2px border. Never look like an emergency-services button.</style>
+      </component>
+    </components>
+
+    <icons>
+      Use a consistent rounded-outline icon set.
+      Use icons only when they clarify: walking person, child/teen backpack, older adult, route, shield with check,
+      sidewalk, crossing, traffic light, speedometer, hill, bench, sun, moon, location, message, pickup car,
+      recalculate, clock, privacy lock, and info.
+    </icons>
+  </design_system>
+
+  <app_information_architecture>
+    <pages>
+      <page>1. Welcome / onboarding</page>
+      <page>2. Route planner</page>
+      <page>3. Route results with interactive map</page>
+      <page>4. Street-segment suitability explanation</page>
+      <page>5. Guardian Mode setup</page>
+      <page>6. Active trip / Guardian Mode</page>
+      <page>7. Off-route prompt</page>
+      <page>8. Sunset advisory</page>
+      <page>9. How scoring works / limitations</page>
+      <page>10. Responsive desktop route-planner view</page>
+    </pages>
+  </app_information_architecture>
+
+  <screens>
+    <screen id="01_welcome" name="Welcome">
+      <device>Mobile 390 x 844</device>
+      <purpose>Introduce the app quickly and let the user choose who they are routing for.</purpose>
+      <layout>
+        <header>
+          <logo_asset>Provided SafeRoute+ Bergen logo</logo_asset>
+          <right_action>Text link: How it works</right_action>
+        </header>
+
+        <hero>
+          <eyebrow>RIDGEWOOD PILOT</eyebrow>
+          <headline>Choose a route that feels better to walk.</headline>
+          <body>
+            SafeRoute+ helps you compare walking routes by time and pedestrian-friendly street features,
+            so you can decide what matters most today.
+          </body>
+          <illustration>
+            Create an original flat vector illustration: a teen walking on a clearly marked neighborhood crosswalk,
+            with warm orange, teal, navy, yellow, and peach accents. Include sidewalk, tree, small house shapes,
+            and a visible crossing sign. Do not use a mascot, do not imitate Duolingo characters, and do not use photography.
+          </illustration>
+        </hero>
+
+        <profile_selector>
+          <label>Who are we routing for?</label>
+          <options>
+            <option icon="backpack walking person" title="Child / teen" subtitle="Simpler crossings and calmer streets"/>
+            <option icon="older adult walking person" title="Older adult" subtitle="Sidewalks, crossings, and lower stress"/>
+            <option icon="walking person" title="General" subtitle="A balanced everyday walking route"/>
+          </options>
+          <selected_state>Child / teen selected by default</selected_state>
+        </profile_selector>
+
+        <footer_action>
+          <primary_button>Plan a route</primary_button>
+          <privacy_note>Private by design. SafeRoute+ does not track anyone automatically.</privacy_note>
+        </footer_action>
+      </layout>
+      <prototype_interactions>
+        <interaction>Tap a profile chip to select it.</interaction>
+        <interaction>Tap Plan a route to navigate to 02_route_planner.</interaction>
+        <interaction>Tap How it works to navigate to 09_how_scoring_works.</interaction>
+      </prototype_interactions>
+    </screen>
+
+    <screen id="02_route_planner" name="Plan a route">
+      <device>Mobile 390 x 844</device>
+      <purpose>Collect start, destination, profile, and time-versus-suitability preference efficiently.</purpose>
+      <layout>
+        <top_bar>
+          <left_action>Back</left_action>
+          <title>Plan a walk</title>
+          <right_action>Info</right_action>
+        </top_bar>
+
+        <location_form>
+          <input label="Start" value="Ridgewood High School" icon="orange origin pin"/>
+          <connector>Vertical dotted route connector</connector>
+          <input label="Destination" value="Ridgewood Train Station" icon="navy destination pin"/>
+          <link_action>Swap locations</link_action>
+        </location_form>
+
+        <profile_summary>
+          <label>Route profile</label>
+          <selected_chip>🧒 Child / teen</selected_chip>
+          <change_link>Change</change_link>
+        </profile_summary>
+
+        <preference_control>
+          <label>What matters most today?</label>
+          <slider>
+            <left>Faster</left>
+            <right>More pedestrian-friendly</right>
+            <selected_position>Balanced, slightly toward pedestrian-friendly</selected_position>
+          </slider>
+          <helper_text>
+            We compare travel time with observable features such as crossings, road type, speed, and sidewalks.
+          </helper_text>
+        </preference_control>
+
+        <optional_settings>
+          <row icon="sunset" title="Walking after sunset?" value="Check route timing" action="Open sunset advisory"/>
+          <row icon="shield" title="Guardian Mode" value="Optional check-ins, no live tracking" action="Open Guardian setup"/>
+        </optional_settings>
+
+        <sticky_action>
+          <primary_button>Compare routes</primary_button>
+        </sticky_action>
+      </layout>
+      <prototype_interactions>
+        <interaction>Tap Compare routes to navigate to 03_route_results.</interaction>
+        <interaction>Tap Guardian Mode to navigate to 05_guardian_setup.</interaction>
+        <interaction>Tap Walking after sunset to navigate to 08_sunset_advisory.</interaction>
+      </prototype_interactions>
+    </screen>
+
+    <screen id="03_route_results" name="Route results">
+      <device>Mobile 390 x 844</device>
+      <purpose>Show three credible route choices and make safety-time tradeoffs immediately understandable.</purpose>
+      <layout>
+        <top_bar>
+          <left_action>Back</left_action>
+          <title>Ridgewood High → Station</title>
+          <right_action>More</right_action>
+        </top_bar>
+
+        <map>
+          <style>
+            Create a clean, simplified vector street map of Ridgewood, NJ. It must feel map-like but not use an actual map tile.
+            Use warm off-white land, very pale gray local streets, navy labels, pale green park areas, and small muted building blocks.
+            Show Ridgewood High School, Ridgewood Train Station, downtown, several local residential streets,
+            one larger high-speed arterial road, crosswalk markings, and small sidewalk indicators.
+          </style>
+          <routes>
+            <route name="Fastest" color="#2774C7" pattern="solid" duration="14 min" distance="0.7 mi" score="62"/>
+            <route name="Balanced" color="#F26A21" pattern="solid thick, selected" duration="16 min" distance="0.8 mi" score="81"/>
+            <route name="Most pedestrian-friendly" color="#168B82" pattern="dashed edge accent" duration="19 min" distance="0.9 mi" score="92"/>
+          </routes>
+          <map_annotations>
+            <annotation type="lower suitability segment" color="#D9534F" text="Higher speed + complex crossing"/>
+            <annotation type="positive segment" color="#168B82" text="Sidewalk + residential street"/>
+          </map_annotations>
+        </map>
+
+        <route_summary_sheet>
+          <handle>Visible drag handle</handle>
+          <headline>3 routes found</headline>
+          <subheadline>For a child / teen</subheadline>
+
+          <route_cards>
+            <card selected="false">
+              <route_name>Fastest</route_name>
+              <metrics>14 min · 0.7 mi</metrics>
+              <suitability_badge>62 · Mixed conditions</suitability_badge>
+              <tradeoff>Gets there quickly, but includes a busier crossing.</tradeoff>
+            </card>
+
+            <card selected="true">
+              <route_name>Balanced</route_name>
+              <metrics>16 min · 0.8 mi</metrics>
+              <suitability_badge>81 · Great for walking</suitability_badge>
+              <tradeoff>+2 min for calmer streets and simpler crossings.</tradeoff>
+            </card>
+
+            <card selected="false">
+              <route_name>Most pedestrian-friendly</route_name>
+              <metrics>19 min · 0.9 mi</metrics>
+              <suitability_badge>92 · Great for walking</suitability_badge>
+              <tradeoff>+5 min to avoid the largest roads and difficult intersections.</tradeoff>
+            </card>
+          </route_cards>
+
+          <tradeoff_callout>
+            <icon>shield with check</icon>
+            <text>Balanced adds 2 minutes and improves pedestrian suitability by 19 points.</text>
+          </tradeoff_callout>
+
+          <primary_button>Start Balanced route</primary_button>
+          <secondary_button>See why this route</secondary_button>
+        </route_summary_sheet>
+      </layout>
+      <prototype_interactions>
+        <interaction>Tap each route card to update its selected state and highlight the corresponding route on the map.</interaction>
+        <interaction>Tap the red map segment or See why this route to navigate to 04_segment_explanation.</interaction>
+        <interaction>Tap Start Balanced route to navigate to 06_active_trip.</interaction>
+      </prototype_interactions>
+    </screen>
+
+    <screen id="04_segment_explanation" name="Why this street scores lower">
+      <device>Mobile 390 x 844</device>
+      <purpose>Make the algorithm transparent, concrete, and defensible.</purpose>
+      <layout>
+        <top_bar>
+          <left_action>Close</left_action>
+          <title>Street details</title>
+        </top_bar>
+
+        <map_preview>
+          <style>Zoomed-in simplified map segment with an orange selected route line and a red highlighted crossing area.</style>
+        </map_preview>
+
+        <content>
+          <eyebrow>ROUTE CHARACTERISTICS</eyebrow>
+          <headline>Maple Avenue crossing</headline>
+
+          <score_module>
+            <large_score>58</large_score>
+            <label>Pedestrian suitability</label>
+            <status>Use extra care</status>
+          </score_module>
+
+          <section>
+            <title>What affects this score?</title>
+            <factor_chips>
+              <positive>Sidewalk present</positive>
+              <positive>Signal nearby</positive>
+              <caution>35 mph traffic</caution>
+              <caution>Longer crossing</caution>
+              <caution>Major intersection</caution>
+            </factor_chips>
+          </section>
+
+          <plain_language_explanation>
+            This segment is walkable, but it has faster traffic and a more complicated crossing.
+            Child / teen routes give those conditions extra weight.
+          </plain_language_explanation>
+
+          <limitations_note>
+            Suitability scores describe street characteristics, not a guarantee of safety or a prediction of crashes.
+          </limitations_note>
+
+          <primary_button>Choose a calmer alternative</primary_button>
+        </content>
+      </layout>
+      <prototype_interactions>
+        <interaction>Tap Choose a calmer alternative to return to 03_route_results with Most pedestrian-friendly selected.</interaction>
+      </prototype_interactions>
+    </screen>
+
+    <screen id="05_guardian_setup" name="Guardian Mode setup">
+      <device>Mobile 390 x 844</device>
+      <purpose>Offer useful check-in features without implying live tracking or automatic messaging.</purpose>
+      <layout>
+        <top_bar>
+          <left_action>Back</left_action>
+          <title>Guardian Mode</title>
+        </top_bar>
+
+        <hero_icon>
+          <icon>shield with small heart/check</icon>
+          <surface>soft-peach circle with orange outline</surface>
+        </hero_icon>
+
+        <headline>Stay connected without being tracked.</headline>
+        <body>
+          Guardian Mode sets an arrival reminder and gives the walker quick options to check in or ask for a pickup.
+          Messages are always reviewed and sent by the user.
+        </body>
+
+        <setup_fields>
+          <field label="Trusted contact" value="Mom" action="Choose contact"/>
+          <field label="Expected arrival" value="4:32 PM" action="Edit time"/>
+        </setup_fields>
+
+        <included_features>
+          <row icon="check-circle" title="I’m OK" subtitle="Prepare a quick status message"/>
+          <row icon="car" title="Need pickup" subtitle="Prepare a pickup request with current location"/>
+          <row icon="clock" title="Arrival reminder" subtitle="Prompt a check-in if the trip runs late"/>
+          <row icon="route" title="Off-route prompt" subtitle="Offer recalculation or a check-in when you leave the planned route"/>
+        </included_features>
+
+        <privacy_callout>
+          <title>Your privacy matters</title>
+          <text>SafeRoute+ does not automatically message contacts, share live location, or store a guardian’s location.</text>
+        </privacy_callout>
+
+        <primary_button>Turn on Guardian Mode</primary_button>
+        <secondary_button>Not now</secondary_button>
+      </layout>
+      <prototype_interactions>
+        <interaction>Tap Turn on Guardian Mode to navigate to 06_active_trip.</interaction>
+        <interaction>Tap Not now to navigate to 03_route_results.</interaction>
+      </prototype_interactions>
+    </screen>
+
+    <screen id="06_active_trip" name="Active trip">
+      <device>Mobile 390 x 844</device>
+      <purpose>Show live navigation context and make two guardian actions instantly available.</purpose>
+      <layout>
+        <map>
+          <style>
+            Full-height simplified map with the selected orange Balanced route.
+            Include a blue user location dot, orange route line, turn indicator,
+            school origin behind the user, and train station ahead.
+          </style>
+        </map>
+
+        <top_status>
+          <status_chip>Guardian Mode on</status_chip>
+          <eta>Arrive by 4:32 PM</eta>
+        </top_status>
+
+        <next_direction>
+          <turn_icon>Walk straight</turn_icon>
+          <instruction>Continue on East Ridgewood Avenue for 0.2 mi</instruction>
+          <subtext>Calmer crossing ahead in 2 minutes</subtext>
+        </next_direction>
+
+        <bottom_actions>
+          <guardian_action icon="check-circle" title="I’m OK" subtitle="Send a quick update to Mom"/>
+          <guardian_action icon="car" title="Need pickup" subtitle="Prepare a message with your location"/>
+          <text_action>End route</text_action>
+        </bottom_actions>
+      </layout>
+      <prototype_interactions>
+        <interaction>Tap I’m OK to show a messaging confirmation bottom sheet.</interaction>
+        <interaction>Tap Need pickup to show a prepared pickup-message bottom sheet.</interaction>
+        <interaction>Simulate user leaving route by navigating to 07_off_route_prompt.</interaction>
+      </prototype_interactions>
+    </screen>
+
+    <screen id="07_off_route_prompt" name="Off-route prompt">
+      <device>Mobile 390 x 844</device>
+      <purpose>Demonstrate the smart but non-invasive Guardian Mode response to route deviation.</purpose>
+      <layout>
+        <background>
+          Reuse the active-trip map. Show the blue location dot about 180 meters away from the orange planned route.
+          Show the orange route faintly behind a white bottom sheet.
+        </background>
+
+        <bottom_sheet>
+          <icon>route deviation icon in attention-yellow circle</icon>
+          <headline>You’re off your planned route.</headline>
+          <body>
+            Your location appears farther from the selected route. Would you like to adjust your plan?
+          </body>
+          <primary_button>Recalculate route</primary_button>
+          <secondary_button>I’m OK</secondary_button>
+          <secondary_button>Need pickup</secondary_button>
+          <text_action>Dismiss</text_action>
+        </bottom_sheet>
+      </layout>
+      <prototype_interactions>
+        <interaction>Tap Recalculate route to return to 03_route_results.</interaction>
+        <interaction>Tap I’m OK or Need pickup to show their corresponding message sheets.</interaction>
+      </prototype_interactions>
+    </screen>
+
+    <screen id="08_sunset_advisory" name="Sunset advisory">
+      <device>Mobile 390 x 844</device>
+      <purpose>Explain that route timing may affect suitability without overstating certainty.</purpose>
+      <layout>
+        <top_bar>
+          <left_action>Back</left_action>
+          <title>Route timing</title>
+        </top_bar>
+
+        <illustration>
+          Create an original flat civic illustration of a sidewalk at dusk:
+          orange sunset, navy sky beginning to appear, a visible crosswalk, streetlight, tree, and walker.
+          Keep it calm and readable, not dramatic or scary.
+        </illustration>
+
+        <headline>Part of this walk may happen after sunset.</headline>
+        <body>
+          Sunset is at 6:18 PM. If you leave at 6:05 PM, your trip may continue after dark.
+        </body>
+
+        <recommendation_card>
+          <icon>shield route</icon>
+          <title>Try the more pedestrian-friendly route</title>
+          <text>
+            It spends more time on residential streets and avoids the larger crossing on Maple Avenue.
+          </text>
+          <button>View safer option</button>
+        </recommendation_card>
+
+        <guardian_prompt>
+          <icon>shield check</icon>
+          <title>Want an arrival reminder?</title>
+          <text>Guardian Mode can remind you to check in if your trip takes longer than expected.</text>
+          <link>Set up Guardian Mode</link>
+        </guardian_prompt>
+
+        <limitations_note>
+          This advisory uses trip timing and route characteristics. It does not measure lighting conditions in real time.
+        </limitations_note>
+      </layout>
+      <prototype_interactions>
+        <interaction>Tap View safer option to navigate to 03_route_results with Most pedestrian-friendly selected.</interaction>
+        <interaction>Tap Set up Guardian Mode to navigate to 05_guardian_setup.</interaction>
+      </prototype_interactions>
+    </screen>
+
+    <screen id="09_how_scoring_works" name="How SafeRoute+ scores routes">
+      <device>Mobile 390 x 844</device>
+      <purpose>Provide a transparent method explanation for judges, parents, and users.</purpose>
+      <layout>
+        <top_bar>
+          <left_action>Back</left_action>
+          <title>How it works</title>
+        </top_bar>
+
+        <hero>
+          <eyebrow>TRANSPARENT ROUTING</eyebrow>
+          <headline>Not every walking route feels the same.</headline>
+          <body>
+            SafeRoute+ compares route time with observable pedestrian features. It does not promise that a route is perfectly safe.
+          </body>
+        </hero>
+
+        <scoring_sections>
+          <section icon="sidewalk">
+            <title>Street features</title>
+            <text>We consider factors such as sidewalk availability, road type, traffic speed, lane count, crossings, intersections, and nearby school areas.</text>
+          </section>
+
+          <section icon="profile">
+            <title>Different needs, different weights</title>
+            <text>Child / teen routes place more weight on crossing complexity and major roads. Older adult routes emphasize sidewalks, crossing distance, slope, and intersection difficulty.</text>
+          </section>
+
+          <section icon="slider">
+            <title>You choose the tradeoff</title>
+            <text>Move the slider toward faster or more pedestrian-friendly, then compare the time and suitability difference.</text>
+          </section>
+        </scoring_sections>
+
+        <algorithm_visual>
+          <style>
+            Show an original, simple diagram—not a complicated fake data visualization:
+            Street segments → suitability factors → profile weights → route comparison.
+            Use flat outlined nodes and arrows in orange, teal, navy, and soft peach.
+          </style>
+          <caption>
+            SafeRoute+ uses a weighted street network to compare routes. Scores are explainable route-characteristic estimates, not crash predictions.
+          </caption>
+        </algorithm_visual>
+
+        <limitations_card>
+          <title>Important limitations</title>
+          <items>
+            <item>Street data can be incomplete or outdated.</item>
+            <item>Conditions can change because of construction, weather, traffic, or visibility.</item>
+            <item>Always use your judgment and follow traffic rules.</item>
+          </items>
+        </limitations_card>
+      </layout>
+    </screen>
+
+    <screen id="10_desktop_route_planner" name="Desktop route planner">
+      <device>Desktop 1440 x 1024</device>
+      <purpose>Create a polished responsive showcase for judging and browser use.</purpose>
+      <layout>
+        <navigation>
+          <left>
+            <logo_asset>Provided SafeRoute+ Bergen logo</logo_asset>
+            <nav_item selected="true">Plan a route</nav_item>
+            <nav_item>How it works</nav_item>
+            <nav_item>Ridgewood pilot</nav_item>
+          </left>
+          <right>
+            <status_pill>Ridgewood, NJ</status_pill>
+            <button>Guardian Mode</button>
+          </right>
+        </navigation>
+
+        <main_split_layout>
+          <left_panel>
+            <eyebrow>PEDESTRIAN-FRIENDLY WALKING</eyebrow>
+            <headline>Find a route that fits the person walking.</headline>
+            <body>
+              Compare walking routes by time, sidewalks, crossings, road type, and other visible street characteristics.
+            </body>
+
+            <location_form>
+              <input label="Start" value="Ridgewood High School"/>
+              <input label="Destination" value="Ridgewood Train Station"/>
+            </location_form>
+
+            <profile_selector>
+              <label>Who are we routing for?</label>
+              <options>Child / teen selected; Older adult; General</options>
+            </profile_selector>
+
+            <preference_control>
+              <label>Faster ←→ More pedestrian-friendly</label>
+              <slider_position>Balanced</slider_position>
+            </preference_control>
+
+            <primary_button>Compare routes</primary_button>
+
+            <microcopy>
+              Pilot coverage currently focuses on Ridgewood. Scores explain route characteristics; they do not guarantee safety.
+            </microcopy>
+          </left_panel>
+
+          <right_map_panel>
+            <style>
+              Large simplified Ridgewood map. Use a white rounded map frame with a 2px border,
+              no fake satellite imagery, clear map labels, and warm civic illustration details.
+              Include three routes with the orange Balanced route selected.
+            </style>
+
+            <floating_route_card>
+              <eyebrow>RECOMMENDED FOR CHILD / TEEN</eyebrow>
+              <title>Balanced route</title>
+              <metrics>16 min · 0.8 mi · Suitability 81</metrics>
+              <tradeoff>2 extra minutes for calmer streets and simpler crossings.</tradeoff>
+              <button>View route details</button>
+            </floating_route_card>
+          </right_map_panel>
+        </main_split_layout>
+
+        <bottom_trust_strip>
+          <item icon="route">Compare time and pedestrian suitability</item>
+          <item icon="profile">Profiles for children, older adults, and general pedestrians</item>
+          <item icon="shield">Optional check-ins without live tracking</item>
+        </bottom_trust_strip>
+      </layout>
+    </screen>
+  </screens>
+
+  <prototype_flow>
+    <flow>
+      Welcome → Plan a route → Compare routes → Tap a street explanation →
+      Return to route results → Start route → Active Guardian Mode →
+      Off-route prompt → Recalculate or send a user-confirmed check-in.
+    </flow>
+    <flow>
+      Plan a route → Guardian Mode setup → Active trip.
+    </flow>
+    <flow>
+      Plan a route → Sunset advisory → More pedestrian-friendly route.
+    </flow>
+    <flow>
+      Welcome or planner → How it works → Back.
+    </flow>
+  </prototype_flow>
+
+  <content_rules>
+    <use_realistic_local_content>
+      Use Ridgewood High School, Ridgewood Train Station, downtown Ridgewood, neighborhood streets,
+      and a Ridgewood Pilot label. Keep all sample durations, distances, and scores consistent:
+      Fastest: 14 min, 0.7 mi, 62.
+      Balanced: 16 min, 0.8 mi, 81.
+      Most pedestrian-friendly: 19 min, 0.9 mi, 92.
+    </use_realistic_local_content>
+
+    <voice>
+      Clear, modest, and practical. Prefer:
+      “More pedestrian-friendly,” “street characteristics,” “simpler crossings,”
+      “calmer streets,” “check in,” “compare routes,” and “use extra care.”
+      Avoid:
+      “Guaranteed safe,” “danger prediction,” “crime risk,” “AI safety score,”
+      “life-saving,” “monitoring,” “surveillance,” and “automatic alert.”
+    </voice>
+  </content_rules>
+
+  <final_quality_check>
+    <requirement>
+      Generate real, editable Figma frames and reusable components rather than a single flattened landing-page mockup.
+    </requirement>
+    <requirement>
+      Include visible component variants for selected and unselected profiles, route cards, suitability badges, and buttons.
+    </requirement>
+    <requirement>
+      Include prototype links between the primary screens.
+    </requirement>
+    <requirement>
+      Make mobile the primary experience and desktop a clearly responsive adaptation.
+    </requirement>
+    <requirement>
+      Use original civic, flat vector illustrations only. No stock photography and no copied mascot art.
+    </requirement>
+    <requirement>
+      The final result should look like a thoughtful, polished public-interest product built by serious students:
+      colorful and approachable, but never childish, generic, or “AI generated.”
+    </requirement>
+  </final_quality_check>
+</figma_make_prompt>

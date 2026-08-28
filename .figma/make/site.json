@@ -1,0 +1,11 @@
+{
+  "title": "SafeRoute",
+  "description": "Streamlines task management and communication to help professionals stay organized and deliver reliable results for their teams and clients.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
