@@ -5,34 +5,44 @@ import networkx as nx
 import osmnx as ox
 
 
+VALID_WEIGHTS = {
+    "length",
+    "safety_weight",
+}
+
+
 def _best_edge_data(
     G,
     u,
     v,
-    weight_attribute: str = "length",
+    weight_attribute: str,
 ) -> dict[str, Any]:
-    """
-    Return the best parallel edge between u and v
-    according to the routing weight currently being used.
-    """
 
-    edge_dict = G.get_edge_data(u, v)
+    edge_dict = G.get_edge_data(
+        u,
+        v,
+    )
 
     if not edge_dict:
+
         raise nx.NetworkXNoPath(
-            f"No edge data for {u} -> {v}"
+            f"No edge data for "
+            f"{u} -> {v}"
         )
 
     def edge_cost(item):
+
         _, data = item
 
-        if weight_attribute in data:
-            return float(data[weight_attribute])
+        value = data.get(
+            weight_attribute,
+            data.get(
+                "length",
+                float("inf"),
+            ),
+        )
 
-        if "length" in data:
-            return float(data["length"])
-
-        return float("inf")
+        return float(value)
 
     _, data = min(
         edge_dict.items(),
@@ -44,20 +54,17 @@ def _best_edge_data(
 
 def _route_coordinates(
     G,
-    route: list[int],
-    weight_attribute: str,
-) -> list[list[float]]:
-    """
-    Convert NetworkX route nodes into ordered
-    GeoJSON-compatible [longitude, latitude] coordinates.
-    """
+    route,
+    weight_attribute,
+):
 
-    coords: list[list[float]] = []
+    coordinates = []
 
     for u, v in zip(
         route[:-1],
         route[1:],
     ):
+
         data = _best_edge_data(
             G,
             u,
@@ -65,29 +72,49 @@ def _route_coordinates(
             weight_attribute,
         )
 
-        geom = data.get("geometry")
+        geometry = data.get(
+            "geometry"
+        )
 
-        if geom is not None:
+        if geometry is not None:
+
             segment = [
-                [float(x), float(y)]
-                for x, y in geom.coords
+                [
+                    float(x),
+                    float(y),
+                ]
+                for x, y
+                in geometry.coords
             ]
 
         else:
+
             segment = [
                 [
-                    float(G.nodes[u]["x"]),
-                    float(G.nodes[u]["y"]),
+                    float(
+                        G.nodes[u]["x"]
+                    ),
+                    float(
+                        G.nodes[u]["y"]
+                    ),
                 ],
                 [
-                    float(G.nodes[v]["x"]),
-                    float(G.nodes[v]["y"]),
+                    float(
+                        G.nodes[v]["x"]
+                    ),
+                    float(
+                        G.nodes[v]["y"]
+                    ),
                 ],
             ]
 
-        # Ensure geometry runs from u -> v.
-        ux = float(G.nodes[u]["x"])
-        uy = float(G.nodes[u]["y"])
+        ux = float(
+            G.nodes[u]["x"]
+        )
+
+        uy = float(
+            G.nodes[u]["y"]
+        )
 
         d_first = hypot(
             segment[0][0] - ux,
@@ -102,73 +129,77 @@ def _route_coordinates(
         if d_last < d_first:
             segment.reverse()
 
-        # Avoid duplicate point where segments meet.
         if (
-            coords
+            coordinates
             and segment
-            and coords[-1] == segment[0]
+            and coordinates[-1]
+            == segment[0]
         ):
             segment = segment[1:]
 
-        coords.extend(segment)
+        coordinates.extend(
+            segment
+        )
 
-    return coords
+    return coordinates
 
 
-def _physical_distance(
+def _route_edge_data(
     G,
-    route: list[int],
-    weight_attribute: str,
-) -> float:
-    """
-    Return actual walking distance in meters,
-    regardless of which routing weight was used.
-    """
-
-    distance_m = 0.0
+    route,
+    weight_attribute,
+):
 
     for u, v in zip(
         route[:-1],
         route[1:],
     ):
-        data = _best_edge_data(
+
+        yield _best_edge_data(
             G,
             u,
             v,
             weight_attribute,
         )
 
-        distance_m += float(
+
+def _physical_distance(
+    G,
+    route,
+    weight_attribute,
+):
+
+    total = 0.0
+
+    for data in _route_edge_data(
+        G,
+        route,
+        weight_attribute,
+    ):
+
+        total += float(
             data.get(
                 "length",
                 0.0,
             )
         )
 
-    return distance_m
+    return total
 
 
 def _routing_cost(
     G,
-    route: list[int],
-    weight_attribute: str,
-) -> float:
-    """
-    Return the numerical cost that Dijkstra minimized.
-    """
+    route,
+    weight_attribute,
+):
 
     total = 0.0
 
-    for u, v in zip(
-        route[:-1],
-        route[1:],
+    for data in _route_edge_data(
+        G,
+        route,
+        weight_attribute,
     ):
-        data = _best_edge_data(
-            G,
-            u,
-            v,
-            weight_attribute,
-        )
 
         value = data.get(
             weight_attribute,
@@ -178,33 +209,54 @@ def _routing_cost(
             ),
         )
 
-        total += float(value)
+        total += float(
+            value
+        )
 
     return total
 
 
-def _route_crash_stats(
+def _route_safety_stats(
     G,
-    route: list[int],
-    weight_attribute: str,
-) -> dict[str, float | int]:
-    """
-    Summarize crash exposure along the selected route.
-    """
+    route,
+    weight_attribute,
+):
 
     crash_edges = 0
     crash_count_total = 0
-    max_crash_score = 0.0
 
-    for u, v in zip(
-        route[:-1],
-        route[1:],
+    total_length = 0.0
+
+    weighted_risk = 0.0
+    weighted_coverage = 0.0
+
+    max_edge_risk = 0.0
+
+    for data in _route_edge_data(
+        G,
+        route,
+        weight_attribute,
     ):
-        data = _best_edge_data(
-            G,
-            u,
-            v,
-            weight_attribute,
+
+        length = float(
+            data.get(
+                "length",
+                0.0,
+            )
+        )
+
+        risk = float(
+            data.get(
+                "pedestrian_risk",
+                0.0,
+            )
+        )
+
+        coverage = float(
+            data.get(
+                "safety_data_coverage",
+                0.0,
+            )
         )
 
         crash_count = int(
@@ -216,30 +268,93 @@ def _route_crash_stats(
             )
         )
 
-        crash_score = float(
-            data.get(
-                "crash_score",
-                0.0,
-            )
-        )
-
         if crash_count > 0:
             crash_edges += 1
 
-        crash_count_total += crash_count
-
-        max_crash_score = max(
-            max_crash_score,
-            crash_score,
+        crash_count_total += (
+            crash_count
         )
 
-    return {
-        "crash_edges": crash_edges,
-        "crash_count_total": crash_count_total,
-        "max_crash_score": round(
-            max_crash_score,
-            3,
+        max_edge_risk = max(
+            max_edge_risk,
+            risk,
+        )
+
+        weighted_risk += (
+            risk
+            * length
+        )
+
+        weighted_coverage += (
+            coverage
+            * length
+        )
+
+        total_length += length
+
+    if total_length > 0:
+
+        average_risk = (
+            weighted_risk
+            / total_length
+        )
+
+        average_coverage = (
+            weighted_coverage
+            / total_length
+        )
+
+    else:
+
+        average_risk = 0.0
+        average_coverage = 0.0
+
+    route_safety_score = (
+        100.0
+        * (
+            1.0
+            - average_risk
+        )
+    )
+
+    route_safety_score = max(
+        0.0,
+        min(
+            100.0,
+            route_safety_score,
         ),
+    )
+
+    return {
+        "route_safety_score":
+            round(
+                route_safety_score,
+                1,
+            ),
+
+        "average_route_risk":
+            round(
+                average_risk,
+                3,
+            ),
+
+        "max_edge_risk":
+            round(
+                max_edge_risk,
+                3,
+            ),
+
+        "crash_edges":
+            crash_edges,
+
+        "crash_count_total":
+            crash_count_total,
+
+        "safety_data_coverage":
+            round(
+                average_coverage,
+                3,
+            ),
     }
 
 
@@ -252,59 +367,57 @@ def get_shortest_walking_route(
     weight_attribute: str = "length",
 ) -> dict[str, Any]:
 
-    valid_weights = {
-        "length",
-        "final_weight",
-    }
+    if (
+        weight_attribute
+        not in VALID_WEIGHTS
+    ):
 
-    if weight_attribute not in valid_weights:
         raise ValueError(
             "Unsupported routing weight: "
             f"{weight_attribute}"
         )
 
-    # Crash-aware routing requires final_weight
-    # on every graph edge.
-    if weight_attribute == "final_weight":
+    if (
+        weight_attribute
+        == "safety_weight"
+    ):
 
-        missing_count = 0
+        missing = sum(
+            1
+            for _, _, _, data
+            in G.edges(
+                keys=True,
+                data=True,
+            )
+            if "safety_weight"
+            not in data
+        )
 
-        for _, _, _, data in G.edges(
-            keys=True,
-            data=True,
-        ):
-            if "final_weight" not in data:
-                missing_count += 1
+        if missing:
 
-        if missing_count > 0:
             raise ValueError(
-                "Crash-aware graph is "
-                f"missing final_weight on "
-                f"{missing_count} edges. "
-                "Run add_crash_weights.py again."
+                f"{missing} edges are "
+                "missing safety_weight."
             )
 
-    # --------------------------------------------------
-    # Find nearest graph nodes
-    # --------------------------------------------------
-
-    start_node = ox.distance.nearest_nodes(
-        G,
-        X=start_lon,
-        Y=start_lat,
+    start_node = (
+        ox.distance.nearest_nodes(
+            G,
+            X=start_lon,
+            Y=start_lat,
+        )
     )
 
-    end_node = ox.distance.nearest_nodes(
-        G,
-        X=end_lon,
-        Y=end_lat,
+    end_node = (
+        ox.distance.nearest_nodes(
+            G,
+            X=end_lon,
+            Y=end_lat,
+        )
     )
-
-    # --------------------------------------------------
-    # Calculate route
-    # --------------------------------------------------
 
     try:
+
         route = nx.shortest_path(
             G,
             source=start_node,
@@ -314,14 +427,12 @@ def get_shortest_walking_route(
         )
 
     except nx.NetworkXNoPath as exc:
-        raise nx.NetworkXNoPath(
-            "No walking route could be found "
-            "between these points."
-        ) from exc
 
-    # --------------------------------------------------
-    # Route measurements
-    # --------------------------------------------------
+        raise nx.NetworkXNoPath(
+            "No pedestrian route "
+            "could be found between "
+            "these locations."
+        ) from exc
 
     distance_m = _physical_distance(
         G,
@@ -341,107 +452,104 @@ def get_shortest_walking_route(
         weight_attribute,
     )
 
-    crash_stats = _route_crash_stats(
-        G,
-        route,
-        weight_attribute,
+    safety_stats = (
+        _route_safety_stats(
+            G,
+            route,
+            weight_attribute,
+        )
     )
 
-    # --------------------------------------------------
-    # Routing mode
-    # --------------------------------------------------
+    routing_mode = (
+        "fastest"
+        if weight_attribute
+        == "length"
+        else "safest"
+    )
 
-    if weight_attribute == "length":
-        routing_mode = "shortest"
+    properties = {
+        "routing_mode":
+            routing_mode,
 
-    else:
-        routing_mode = "crash_aware"
+        "weight":
+            weight_attribute,
 
-    # --------------------------------------------------
-    # Return API-ready response
-    # --------------------------------------------------
+        "distance_m":
+            round(
+                distance_m,
+                1,
+            ),
+
+        "routing_cost":
+            round(
+                routing_cost,
+                2,
+            ),
+
+        **safety_stats,
+    }
 
     return {
-        "start_node": int(start_node),
-        "end_node": int(end_node),
+        "start_node":
+            int(start_node),
 
-        "routing_mode": routing_mode,
-        "weight": weight_attribute,
+        "end_node":
+            int(end_node),
 
-        "distance_m": round(
-            distance_m,
-            1,
-        ),
+        "routing_mode":
+            routing_mode,
 
-        "distance_miles": round(
-            distance_m / 1609.344,
-            3,
-        ),
+        "weight":
+            weight_attribute,
 
-        "estimated_walk_minutes": round(
-            distance_m / 1.4 / 60.0,
-            1,
-        ),
+        "distance_m":
+            round(
+                distance_m,
+                1,
+            ),
 
-        "routing_cost": round(
-            routing_cost,
-            2,
-        ),
+        "distance_miles":
+            round(
+                distance_m
+                / 1609.344,
+                3,
+            ),
 
-        "crash_edges":
-            crash_stats["crash_edges"],
+        "estimated_walk_minutes":
+            round(
+                distance_m
+                / 1.4
+                / 60.0,
+                1,
+            ),
 
-        "crash_count_total":
-            crash_stats["crash_count_total"],
+        "routing_cost":
+            round(
+                routing_cost,
+                2,
+            ),
 
-        "max_crash_score":
-            crash_stats["max_crash_score"],
+        **safety_stats,
 
-        "node_count": len(route),
+        "node_count":
+            len(route),
 
-        "coordinates": coordinates,
+        "coordinates":
+            coordinates,
 
         "geojson": {
-            "type": "Feature",
+            "type":
+                "Feature",
 
-            "properties": {
-                "routing_mode":
-                    routing_mode,
-
-                "weight":
-                    weight_attribute,
-
-                "distance_m":
-                    round(
-                        distance_m,
-                        1,
-                    ),
-
-                "routing_cost":
-                    round(
-                        routing_cost,
-                        2,
-                    ),
-
-                "crash_edges":
-                    crash_stats[
-                        "crash_edges"
-                    ],
-
-                "crash_count_total":
-                    crash_stats[
-                        "crash_count_total"
-                    ],
-
-                "max_crash_score":
-                    crash_stats[
-                        "max_crash_score"
-                    ],
-            },
+            "properties":
+                properties,
 
             "geometry": {
-                "type": "LineString",
-                "coordinates": coordinates,
+                "type":
+                    "LineString",
+
+                "coordinates":
+                    coordinates,
             },
         },
     }

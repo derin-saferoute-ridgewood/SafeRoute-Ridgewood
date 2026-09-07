@@ -7,21 +7,45 @@ import osmnx as ox
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 
-WALK_GRAPH_PATH = (
+BASE_GRAPH_PATH = (
     DATA_DIR
     / "ridgewood_walk.graphml"
 )
 
-CRASH_GRAPH_PATH = (
+SAFETY_GRAPH_PATH = (
     DATA_DIR
-    / "ridgewood_crash_weighted.graphml"
+    / "ridgewood_safety_weighted.graphml"
 )
 
 
-def _convert_edge_types(G):
+FLOAT_FIELDS = {
+    "length",
+    "crash_severity_total",
+    "crash_severity_score",
+    "speed_mph",
+    "speed_score",
+    "sidewalk_score",
+    "crossing_score",
+    "lighting_score",
+    "pedestrian_risk",
+    "pedestrian_safety_score",
+    "safety_data_coverage",
+    "safety_weight",
+}
+
+INT_FIELDS = {
+    "crash_count",
+    "speed_known",
+    "sidewalk_known",
+    "crossing_known",
+    "lighting_known",
+}
+
+
+def _convert_graph_types(G):
     """
-    Convert custom GraphML attributes into
-    numeric Python types after loading.
+    GraphML can reload custom numeric attributes
+    as strings. Convert them here once.
     """
 
     for _, _, _, data in G.edges(
@@ -29,69 +53,82 @@ def _convert_edge_types(G):
         data=True,
     ):
 
-        if "length" in data:
-            data["length"] = float(
-                data["length"]
+        for field in FLOAT_FIELDS:
+
+            if field not in data:
+                continue
+
+            value = data[field]
+
+            if value in (
+                None,
+                "",
+            ):
+                continue
+
+            data[field] = float(
+                value
             )
 
-        if "crash_count" in data:
-            data["crash_count"] = int(
-                float(
-                    data["crash_count"]
-                )
-            )
+        for field in INT_FIELDS:
 
-        if "crash_score" in data:
-            data["crash_score"] = float(
-                data["crash_score"]
-            )
+            if field not in data:
+                continue
 
-        if "final_weight" in data:
-            data["final_weight"] = float(
-                data["final_weight"]
+            value = data[field]
+
+            if value in (
+                None,
+                "",
+            ):
+                continue
+
+            data[field] = int(
+                float(value)
             )
 
     return G
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=1)
 def load_graph(
-    mode: str = "shortest",
+    mode: str = "fastest",
 ):
     """
-    Both routing modes use the weighted graph.
+    Both routing modes use the exact same graph.
 
-    shortest
+    fastest
         -> weight = length
 
-    crash_aware
-        -> weight = final_weight
-
-    The untouched walking graph remains as
-    the clean source/backup graph.
+    safest
+        -> weight = safety_weight
     """
 
     if mode not in {
-        "shortest",
-        "crash_aware",
+        "fastest",
+        "safest",
     }:
+
         raise ValueError(
             f"Unsupported routing mode: {mode}"
         )
 
-    graph_path = CRASH_GRAPH_PATH
+    if not SAFETY_GRAPH_PATH.exists():
 
-    if not graph_path.exists():
         raise FileNotFoundError(
-            f"Graph file does not exist: "
-            f"{graph_path}"
+            "Safety graph has not been built. "
+            f"Expected: {SAFETY_GRAPH_PATH}. "
+            "Run: "
+            "python -m backend.scripts.build_safety_graph"
         )
 
     G = ox.load_graphml(
-        graph_path
+        SAFETY_GRAPH_PATH
     )
 
-    return _convert_edge_types(G)
+    return _convert_graph_types(
+        G
+    )
 
 
 def graph_path_for_mode(
@@ -99,11 +136,21 @@ def graph_path_for_mode(
 ) -> Path:
 
     if mode not in {
-        "shortest",
-        "crash_aware",
+        "fastest",
+        "safest",
     }:
+
         raise ValueError(
             f"Unsupported routing mode: {mode}"
         )
 
-    return CRASH_GRAPH_PATH
+    return SAFETY_GRAPH_PATH
+
+
+def clear_graph_cache():
+    """
+    Useful after regenerating the graph
+    while developing.
+    """
+
+    load_graph.cache_clear()

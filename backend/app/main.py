@@ -21,15 +21,12 @@ from backend.app.schemas import (
 
 app = FastAPI(
     title="SafeRoute Ridgewood API",
-    version="0.2.0",
+    version="1.0.0",
 )
 
 
 @app.get("/")
 def root():
-    """
-    Basic API information.
-    """
 
     return {
         "name":
@@ -39,18 +36,14 @@ def root():
             "running",
 
         "routing_modes": [
-            "shortest",
-            "crash_aware",
+            "fastest",
+            "safest",
         ],
     }
 
 
 @app.get("/health")
 def health():
-    """
-    Check whether both routing graphs
-    are available and load correctly.
-    """
 
     result = {
         "ok": True,
@@ -58,44 +51,35 @@ def health():
     }
 
     for mode in [
-        "shortest",
-        "crash_aware",
+        "fastest",
+        "safest",
     ]:
 
-        graph_path = graph_path_for_mode(
-            mode
-        )
-
-        # Graph file missing
-        if not graph_path.exists():
-
-            result["ok"] = False
-
-            result["modes"][mode] = {
-                "available": False,
-                "graph":
-                    str(graph_path),
-            }
-
-            continue
-
         try:
-            G = load_graph(mode)
 
-            if mode == "shortest":
-
-                weight_attribute = (
-                    "length"
+            graph_path = (
+                graph_path_for_mode(
+                    mode
                 )
+            )
 
-            else:
+            G = load_graph(
+                mode
+            )
 
-                weight_attribute = (
-                    "final_weight"
-                )
+            weight = (
+                "length"
+                if mode
+                == "fastest"
+                else
+                "safety_weight"
+            )
 
-            result["modes"][mode] = {
-                "available": True,
+            result[
+                "modes"
+            ][mode] = {
+                "available":
+                    True,
 
                 "graph":
                     graph_path.name,
@@ -107,16 +91,21 @@ def health():
                     G.number_of_edges(),
 
                 "weight":
-                    weight_attribute,
+                    weight,
             }
 
         except Exception as exc:
 
             result["ok"] = False
 
-            result["modes"][mode] = {
-                "available": False,
-                "error": str(exc),
+            result[
+                "modes"
+            ][mode] = {
+                "available":
+                    False,
+
+                "error":
+                    str(exc),
             }
 
     return result
@@ -126,57 +115,29 @@ def health():
 def route(
     request: RouteRequest,
 ):
-    """
-    Calculate either:
-
-    shortest
-        -> weight = length
-
-    crash_aware
-        -> weight = final_weight
-    """
 
     try:
-
-        # ------------------------------------------
-        # Load graph matching requested mode
-        # ------------------------------------------
 
         G = load_graph(
             request.mode
         )
 
-        # ------------------------------------------
-        # Choose routing weight
-        # ------------------------------------------
-
-        if request.mode == "shortest":
+        if (
+            request.mode
+            == "fastest"
+        ):
 
             weight_attribute = (
                 "length"
             )
 
-        elif request.mode == "crash_aware":
-
-            weight_attribute = (
-                "final_weight"
-            )
-
         else:
 
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Unsupported "
-                    "routing mode."
-                ),
+            weight_attribute = (
+                "safety_weight"
             )
 
-        # ------------------------------------------
-        # Calculate route
-        # ------------------------------------------
-
-        result = (
+        return (
             get_shortest_walking_route(
                 G=G,
 
@@ -196,8 +157,6 @@ def route(
                     weight_attribute,
             )
         )
-
-        return result
 
     except FileNotFoundError as exc:
 
@@ -219,10 +178,6 @@ def route(
             status_code=404,
             detail=str(exc),
         ) from exc
-
-    except HTTPException:
-
-        raise
 
     except Exception as exc:
 
