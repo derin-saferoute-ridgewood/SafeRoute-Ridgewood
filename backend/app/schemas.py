@@ -14,3 +14,14 @@ class RouteRequest(BaseModel):
         "fastest",
         "safest",
     ] = "fastest"
+
+    crash_dataset: Literal[
+        "low",
+        "high",
+        "unverified",
+    ] = "low"
+
+
+class SnapRequest(BaseModel):
+    lat: float = Field(..., ge=-90, le=90)
+    lon: float = Field(..., ge=-180, le=180)

@@ -1,4 +1,4 @@
-from math import hypot
+from math import atan2, cos, hypot, radians, sin, sqrt
 from typing import Any
 
 import networkx as nx
@@ -358,6 +358,41 @@ def _route_safety_stats(
     }
 
 
+def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    radius_m = 6371000.0
+    phi1 = radians(lat1)
+    phi2 = radians(lat2)
+    delta_phi = radians(lat2 - lat1)
+    delta_lambda = radians(lon2 - lon1)
+
+    a = (
+        sin(delta_phi / 2.0) ** 2
+        + cos(phi1) * cos(phi2) * sin(delta_lambda / 2.0) ** 2
+    )
+    c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a))
+    return radius_m * c
+
+
+def snap_point_to_graph(G, lat: float, lon: float, max_distance_m: float = 80.0) -> dict[str, Any]:
+    node = ox.distance.nearest_nodes(G, X=lon, Y=lat)
+    node_x = float(G.nodes[node]["x"])
+    node_y = float(G.nodes[node]["y"])
+    distance_m = _haversine_meters(lat, lon, node_y, node_x)
+
+    if distance_m > max_distance_m:
+        raise ValueError(
+            "Can't place a dot there — there isn't a road nearby enough to snap to."
+        )
+
+    return {
+        "valid": True,
+        "node_id": int(node),
+        "lat": node_y,
+        "lon": node_x,
+        "distance_m": round(distance_m, 1),
+    }
+
+
 def get_shortest_walking_route(
     G,
     start_lat: float,
@@ -400,19 +435,22 @@ def get_shortest_walking_route(
                 "missing safety_weight."
             )
 
+    snapped_start = snap_point_to_graph(G, start_lat, start_lon)
+    snapped_end = snap_point_to_graph(G, end_lat, end_lon)
+
     start_node = (
         ox.distance.nearest_nodes(
             G,
-            X=start_lon,
-            Y=start_lat,
+            X=snapped_start["lon"],
+            Y=snapped_start["lat"],
         )
     )
 
     end_node = (
         ox.distance.nearest_nodes(
             G,
-            X=end_lon,
-            Y=end_lat,
+            X=snapped_end["lon"],
+            Y=snapped_end["lat"],
         )
     )
 

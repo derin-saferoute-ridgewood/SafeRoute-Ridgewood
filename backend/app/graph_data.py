@@ -17,6 +17,22 @@ SAFETY_GRAPH_PATH = (
     / "ridgewood_safety_weighted.graphml"
 )
 
+SAFETY2_GRAPH_PATH = (
+    DATA_DIR
+    / "ridgewood_safety2.graphml"
+)
+
+SAFETY3_GRAPH_PATH = (
+    DATA_DIR
+    / "ridgewood_safety3.graphml"
+)
+
+GRAPH_PATHS = {
+    "low": SAFETY_GRAPH_PATH,
+    "high": SAFETY2_GRAPH_PATH,
+    "unverified": SAFETY3_GRAPH_PATH,
+}
+
 
 FLOAT_FIELDS = {
     "length",
@@ -87,15 +103,25 @@ def _convert_graph_types(G):
                 float(value)
             )
 
+    for field in (
+        "crash_data_matched_records",
+        "crash_data_skipped_unmatched_street",
+        "crash_data_skipped_distant",
+    ):
+        value = G.graph.get(field)
+        if value not in (None, ""):
+            G.graph[field] = int(float(value))
+
     return G
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=6)
 def load_graph(
     mode: str = "fastest",
+    crash_dataset: str = "low",
 ):
     """
-    Both routing modes use the exact same graph.
+    Both routing modes use the graph selected by crash dataset.
 
     fastest
         -> weight = length
@@ -113,17 +139,42 @@ def load_graph(
             f"Unsupported routing mode: {mode}"
         )
 
-    if not SAFETY_GRAPH_PATH.exists():
+    if crash_dataset not in GRAPH_PATHS:
+        raise ValueError(
+            f"Unsupported crash dataset: {crash_dataset}"
+        )
+
+    graph_path = GRAPH_PATHS[crash_dataset]
+
+    if not graph_path.exists():
+        build_commands = {
+            "low": "python -m backend.scripts.build_safety_graph",
+            "high": (
+                "python -m backend.scripts.build_safety_graph "
+                "--crash-csv backend/data/Crash.csv "
+                "--output backend/data/ridgewood_safety2.graphml "
+                "--match-street-names"
+            ),
+            "unverified": (
+                "python -m backend.scripts.build_safety_graph "
+                "--crash-csv backend/data/Crash_Ridgewood_Street_Inferred_Geopoints.csv "
+                "--output backend/data/ridgewood_safety3.graphml "
+                "--match-street-names "
+                "--latitude-column latitude_final "
+                "--longitude-column longitude_final "
+                "--street-name-column streetname_osm_candidate "
+                "--unverified"
+            ),
+        }
 
         raise FileNotFoundError(
-            "Safety graph has not been built. "
-            f"Expected: {SAFETY_GRAPH_PATH}. "
-            "Run: "
-            "python -m backend.scripts.build_safety_graph"
+            f"The {crash_dataset} crash-data graph has not been built. "
+            f"Expected: {graph_path}. "
+            f"Run: {build_commands[crash_dataset]}"
         )
 
     G = ox.load_graphml(
-        SAFETY_GRAPH_PATH
+        graph_path
     )
 
     return _convert_graph_types(
@@ -133,6 +184,7 @@ def load_graph(
 
 def graph_path_for_mode(
     mode: str,
+    crash_dataset: str = "low",
 ) -> Path:
 
     if mode not in {
@@ -144,7 +196,12 @@ def graph_path_for_mode(
             f"Unsupported routing mode: {mode}"
         )
 
-    return SAFETY_GRAPH_PATH
+    if crash_dataset not in GRAPH_PATHS:
+        raise ValueError(
+            f"Unsupported crash dataset: {crash_dataset}"
+        )
+
+    return GRAPH_PATHS[crash_dataset]
 
 
 def clear_graph_cache():

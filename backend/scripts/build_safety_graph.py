@@ -1,9 +1,17 @@
+import argparse
 from pathlib import Path
 import re
 
 import numpy as np
 import osmnx as ox
 import pandas as pd
+from pyproj import Transformer
+from shapely.geometry import LineString, Point
+
+from backend.scripts.crash_street_matching import (
+    load_normalized_street_aliases,
+    street_name_candidates,
+)
 
 
 BASE_DIR = (
@@ -36,6 +44,50 @@ OUTPUT_PATH = (
     DATA_DIR
     / "ridgewood_safety_weighted.graphml"
 )
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--crash-csv",
+    type=Path,
+    default=CRASH_PATH,
+    help="Crash CSV used to add crash attributes to the walking graph.",
+)
+parser.add_argument(
+    "--output",
+    type=Path,
+    default=OUTPUT_PATH,
+    help="Path for the processed safety-weighted GraphML.",
+)
+parser.add_argument(
+    "--match-street-names",
+    action="store_true",
+    help="Only assign crashes to nearby OSM edges with matching normalized street names.",
+)
+parser.add_argument(
+    "--latitude-column",
+    help="Coordinate column to use instead of automatic latitude-column detection.",
+)
+parser.add_argument(
+    "--longitude-column",
+    help="Coordinate column to use instead of automatic longitude-column detection.",
+)
+parser.add_argument(
+    "--street-name-column",
+    help="Street-name column to use when matching crashes to OSM edges.",
+)
+parser.add_argument(
+    "--unverified",
+    action="store_true",
+    help="Mark the generated graph as using unverified crash geopoints.",
+)
+arguments = parser.parse_args()
+CRASH_PATH = arguments.crash_csv
+OUTPUT_PATH = arguments.output
+MATCH_STREET_NAMES = arguments.match_street_names
+LATITUDE_COLUMN = arguments.latitude_column
+LONGITUDE_COLUMN = arguments.longitude_column
+STREET_NAME_COLUMN = arguments.street_name_column
+UNVERIFIED = arguments.unverified
 
 
 # ==================================================
@@ -733,20 +785,13 @@ crashes = pd.read_csv(
 
 latitude_col = find_column(
     crashes,
-    [
-        "latitude",
-        "lat",
-    ],
+    [LATITUDE_COLUMN] if LATITUDE_COLUMN else ["latitude", "lat"],
     required=True,
 )
 
 longitude_col = find_column(
     crashes,
-    [
-        "longitude",
-        "lon",
-        "lng",
-    ],
+    [LONGITUDE_COLUMN] if LONGITUDE_COLUMN else ["longitude", "lon", "lng"],
     required=True,
 )
 
@@ -800,6 +845,8 @@ print(
     len(crashes),
 )
 
+G.graph["crash_data_source"] = CRASH_PATH.name
+G.graph["crash_data_quality"] = "unverified" if UNVERIFIED else "normalized"
 
 if len(crashes) == 0:
 
@@ -831,28 +878,140 @@ for _, _, _, data in G.edges(
 # MAP CRASHES TO EDGES
 # ==================================================
 
-nearest_edges = (
-    ox.distance.nearest_edges(
-        G,
-
-        X=crashes[
-            longitude_col
-        ].to_numpy(),
-
-        Y=crashes[
-            latitude_col
-        ].to_numpy(),
+if MATCH_STREET_NAMES:
+    normalized_path = DATA_DIR / "SafeRoute_Ridgewood_Pedestrian_Crashes_Normalized.csv"
+    street_aliases, normalized_crash_ids = load_normalized_street_aliases(
+        normalized_path
     )
-)
+    crash_id_col = find_column(
+        crashes,
+        ["id_cr", "Crash ID"],
+    )
+    if crash_id_col:
+        crashes["_normalized_street"] = crashes[crash_id_col].map(
+            lambda crash_id: normalized_crash_ids.get(str(crash_id).strip(), "")
+        )
+    else:
+        crashes["_normalized_street"] = ""
 
+    street_name_col = find_column(
+        crashes,
+        [STREET_NAME_COLUMN] if STREET_NAME_COLUMN else ["streetname"],
+        required=True,
+    )
 
-for (
-    edge,
-    (_, crash),
-) in zip(
-    nearest_edges,
-    crashes.iterrows(),
-):
+    projected_graph = ox.project_graph(G)
+    projected_crs = projected_graph.graph["crs"]
+    source_crs = G.graph["crs"]
+    coordinate_transformer = Transformer.from_crs(
+        source_crs,
+        projected_crs,
+        always_xy=True,
+    )
+
+    named_edges = {}
+    for u, v, key, data in projected_graph.edges(keys=True, data=True):
+        edge_geometry = data.get("geometry")
+        if edge_geometry is None:
+            edge_geometry = LineString(
+                [
+                    (
+                        projected_graph.nodes[u]["x"],
+                        projected_graph.nodes[u]["y"],
+                    ),
+                    (
+                        projected_graph.nodes[v]["x"],
+                        projected_graph.nodes[v]["y"],
+                    ),
+                ]
+            )
+        edge_name = data.get("name")
+        edge_names = edge_name if isinstance(edge_name, (list, tuple, set)) else [edge_name]
+        for edge_name in edge_names:
+            for candidate in street_name_candidates(edge_name):
+                if candidate:
+                    named_edges.setdefault(candidate, []).append(
+                        (u, v, key, data, edge_geometry)
+                    )
+
+    crash_matches = []
+    unmatched_names = {}
+    too_far_matches = 0
+    maximum_name_match_distance_m = 250.0
+
+    for _, crash in crashes.iterrows():
+        normalized_name = crash.get("_normalized_street", "")
+        candidates = (
+            street_name_candidates(normalized_name, street_aliases)
+            if normalized_name
+            else street_name_candidates(crash.get(street_name_col, ""), street_aliases)
+        )
+        candidate_edges = [
+            edge
+            for candidate in candidates
+            for edge in named_edges.get(candidate, [])
+        ]
+
+        if not candidate_edges:
+            raw_name = str(crash.get(street_name_col, "")).strip()
+            unmatched_names[raw_name] = unmatched_names.get(raw_name, 0) + 1
+            continue
+
+        x, y = coordinate_transformer.transform(
+            float(crash[longitude_col]),
+            float(crash[latitude_col]),
+        )
+        point = Point(x, y)
+        nearest_edge = min(
+            candidate_edges,
+            key=lambda edge: edge[4].distance(point),
+        )
+        distance_m = nearest_edge[4].distance(point)
+        if distance_m > maximum_name_match_distance_m:
+            too_far_matches += 1
+            continue
+
+        crash_matches.append((nearest_edge[:3], crash))
+
+    print(
+        "Crash records matched by normalized street name:",
+        len(crash_matches),
+        "of",
+        len(crashes),
+    )
+    print(
+        "Crash records skipped because no matching OSM street name was found:",
+        sum(unmatched_names.values()),
+    )
+    for street_name, count in sorted(
+        unmatched_names.items(),
+        key=lambda item: item[1],
+        reverse=True,
+    )[:20]:
+        print(f"  {street_name or '[blank]'}: {count}")
+    print(
+        "Crash records skipped because matching street was over "
+        f"{maximum_name_match_distance_m:.0f} m away:",
+        too_far_matches,
+    )
+    G.graph["crash_data_matched_records"] = len(crash_matches)
+    G.graph["crash_data_skipped_unmatched_street"] = sum(
+        unmatched_names.values()
+    )
+    G.graph["crash_data_skipped_distant"] = too_far_matches
+else:
+    nearest_edges = ox.distance.nearest_edges(
+        G,
+        X=crashes[longitude_col].to_numpy(),
+        Y=crashes[latitude_col].to_numpy(),
+    )
+    crash_matches = [
+        (edge, crash)
+        for edge, (_, crash) in zip(nearest_edges, crashes.iterrows())
+    ]
+    G.graph["crash_data_matched_records"] = len(crash_matches)
+
+for edge, crash in crash_matches:
 
     u, v, key = edge
 
